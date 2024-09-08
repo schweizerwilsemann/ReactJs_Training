@@ -2,12 +2,16 @@
 import InputTodo from "./test/InputTodo";
 
 
-
+const handleTest = (name: string) => {
+  alert(`handle test with name: ${name}`);
+}
 
 function App() {
   return (
     <div>
-        <InputTodo />
+        <InputTodo 
+          TestFunction={handleTest}
+        />
     </div>
   );
 }

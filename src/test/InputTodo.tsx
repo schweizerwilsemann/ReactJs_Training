@@ -1,18 +1,31 @@
 import React, { ReactNode, useState } from 'react'
+interface IProps {
+  name: string,
+  age: number,
+  infos:{
+    gender: string,
+    address: string,
+  },
+  abc?: string,
+  TestFunction: (value: string) => void
+}
 
-export default function InputTodo() {
+export default function InputTodo(props: IProps) {
 
+  const {TestFunction, name, age} = props;
   const [text, setText] = useState('');
   const [listTodo, setListTodo] = useState(['']);
 
-  
   const handleOnclick = () => {
-    if(!text){
-      alert('Empty todo');
-      return;
-    }
-    setListTodo([...listTodo, text]);
-    setText('');
+
+    TestFunction(text);
+
+    // if(!text){
+    // alert('Empty todo');
+    //   return;
+    // }
+    // setListTodo([...listTodo, text]);
+    // setText('');
   }
   return (
     <div>
