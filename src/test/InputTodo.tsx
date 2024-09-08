@@ -7,25 +7,24 @@ interface IProps {
     address: string,
   },
   abc?: string,
-  TestFunction: (value: string) => void
+  TestFunction: (value: string) => void,
+  listTodo: string[],
+  setListTodo: (v: string[]) => void
 }
 
 export default function InputTodo(props: IProps) {
 
-  const {TestFunction, name, age} = props;
+  const {setListTodo, listTodo} = props;
   const [text, setText] = useState('');
-  const [listTodo, setListTodo] = useState(['']);
+  
 
   const handleOnclick = () => {
-
-    TestFunction(text);
-
-    // if(!text){
-    // alert('Empty todo');
-    //   return;
-    // }
-    // setListTodo([...listTodo, text]);
-    // setText('');
+    if(!text){
+    alert('Empty todo');
+      return;
+    }
+    setListTodo([...listTodo, text]);
+    setText('');
   }
   return (
     <div>
@@ -36,16 +35,7 @@ export default function InputTodo(props: IProps) {
         >
           </input> <></> &nbsp;
         <button style={{cursor: "pointer"}} onClick={() => handleOnclick()}> Save</button>
-        <br />
-        <div className="">
-          <ul>
-            {listTodo.map((item, index) =>{
-              return (
-                <li key={index}>{item}</li>
-              )
-            } )}
-          </ul>
-        </div>
+       
     </div>
   )
 }
