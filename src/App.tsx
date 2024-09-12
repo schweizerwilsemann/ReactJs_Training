@@ -11,10 +11,12 @@ function App() {
   return (
     <div>
         <InputTodo 
-          TestFunction={handleTest}
-          listTodo={listTodo}
-          setListTodo={setListTodo}
-        />
+        TestFunction={handleTest}
+        listTodo={listTodo}
+        setListTodo={setListTodo} name={""} age={0} infos={{
+          gender: "",
+          address: ""
+        }}        />
          <br />
         <div className="">
           <ul>
