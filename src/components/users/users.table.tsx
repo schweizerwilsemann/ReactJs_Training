@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 // import '..//..//styles/users.css';
-import {Button, Table, Modal, Input, notification} from 'antd';
+import {Button, Table, Modal, Popconfirm  , notification, PopconfirmProps, message} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type, {ColumnsType} from 'antd/es/table';
+import CreateUserModal from './create.user.modal';
+import UpdateUserModal from './update.user.modal';
 interface IUsers {
 
     _id: string,
@@ -13,16 +15,14 @@ interface IUsers {
 
 export default function UsersTable() {
     const [listUsers, setListUsers] = useState([]);
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [age, setAge] = useState('');
-    const [role, setRole] = useState('');
-    const [gender, setGender] = useState('');
-    const [address, setAddress] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjZlMTNmNmQwY2VkZGMxYzc5ZjlmMzg0IiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJhZGRyZXNzIjoiVmlldE5hbSIsImlzVmVyaWZ5Ijp0cnVlLCJuYW1lIjoiSSdtIGFkbWluIiwidHlwZSI6IlNZU1RFTSIsInJvbGUiOiJBRE1JTiIsImdlbmRlciI6Ik1BTEUiLCJhZ2UiOjY5LCJpYXQiOjE3MjYyOTQ0MDUsImV4cCI6MTgxMjY5NDQwNX0.sHNc79YauulOx-fk6PD4GEVxCQie8zxBMGQWr6a6IM8";
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+
+    const [record, setRecord] = useState({});
+
+    const accessToken = localStorage.getItem("accessToken") as string;
 
 
     useEffect(() => {
@@ -31,7 +31,7 @@ export default function UsersTable() {
     
     const getData = async () => {
 
-        const res = await fetch('http://localhost:8000/api/v1/users', {
+        const res = await fetch('http://localhost:8000/api/v1/users/all', {
             method: 'GET',
             
             headers: {
@@ -40,8 +40,43 @@ export default function UsersTable() {
             }
         });
         const d = await res.json();
+
+        if(!d.data) {
+            notification.error({
+                message: JSON.stringify(d.message)
+            })
+        }
+
         setListUsers(d.data.result);
     }
+
+    const confirm = async (user: IUsers) => {
+        const res = await fetch(`http://localhost:8000/api/v1/users/${user._id}`, 
+            {
+                method: 'DELETE',
+                headers: {
+                    "authorization" : `Bearer ${accessToken}`,
+                    "Content-Type" : "application/json"
+                }
+            }
+        );
+        const data = await res.json();
+        if(data.data){
+            notification.success({
+                message: JSON.stringify(data.message)
+            })
+            await getData();
+
+        }
+        else{
+            notification.error({
+                message: JSON.stringify(data.message)
+            })
+        }
+
+        
+      };
+
 
     const columns : ColumnsType<IUsers> = [
         {
@@ -60,89 +95,63 @@ export default function UsersTable() {
         {
             title: 'Role',
             dataIndex: 'role'
+        },
+        {
+            title: 'Actions',
+            render: (value, record) => {
+                return(
+                    <div>
+                        <button onClick={() => {
+                            setRecord(record);
+                            setIsUpdateModalOpen(true);
+                            
+                        }}>
+                            Edit
+                        </button>
+
+                        <Popconfirm
+                            title="Delete user"
+                            description={`Are you sure to delete this user. name = ${record.name}?`}
+                            onConfirm={() => confirm(record)}
+                            okText="Yes"
+                            cancelText="No"
+                        >
+                            <Button style={{marginLeft: 20}} danger>
+                                Delete
+                            </Button>
+                            
+                        </Popconfirm>
+                    </div>
+                );
+            }
         }
 
     ];
 
-
-    const handleOk =  async () => {
-        const data = {
-            name, email, password, age, gender, address, role
-        }
-        const res = await fetch('http://localhost:8000/api/v1/users', {
-            method: 'POST',
-            
-            headers: {
-                "authorization" : `Bearer ${accessToken}`,
-                "Content-Type" : "application/json"
-            },
-            body: JSON.stringify({...data})
-        });
-        const d = await res.json();
-        if(d.data){
-            //success
-            await getData();
-            notification.success({
-                message: "Created successfully!"
-            });
-            setIsModalOpen(false);
-        }
-        else{
-            //fail
-            notification.error({
-                message: "Something went wrong",
-                description: JSON.stringify(d.message)
-            })
-        }
-         
-    };
-
-    const handlCloseCreateModal = () => {
-        setIsModalOpen(false);
-        setName("");
-        setRole("");
-        setEmail("");
-        setAddress("");
-        setAge("");
-        setGender("");
-        setPassword("");
-    }
+    
     return (
     <div>
         <div style={{display: 'flex', justifyContent: 'space-between', }}>
             <h2>Table Users</h2>
             <div style={{}}>
-                <Button onClick={() =>  setIsModalOpen(true)} icon={<PlusOutlined />} type={`primary`}>Add New</Button>
+                <Button onClick={() =>  setIsCreateModalOpen(true)} icon={<PlusOutlined />} type={`primary`}>Add New</Button>
             </div>
         </div>
         <Table columns={columns} dataSource={listUsers} rowKey={"_id"}/>
-      
-      <Modal title="Add new users" 
-        open={isModalOpen} 
-        onOk={handleOk} 
-        onCancel={() => handlCloseCreateModal()}
-        maskClosable={false}
-        >
-            <div className="">
-                <label>Name</label>
-                <Input 
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                />
-            </div>
-            <div className=""><label>Email</label><Input value={email}
-                    onChange={(event) => setEmail(event.target.value)} /></div>
-            <div className=""><label>Password</label><Input value={password}
-                    onChange={(event) => setPassword(event.target.value)}/></div>
-            <div className=""><label >Age</label><Input value={age}
-                    onChange={(event) => setAge(event.target.value)}/></div>
-            <div className=""><label>Gender</label><Input value={gender}
-                    onChange={(event) => setGender(event.target.value)} /></div>
-            <div className=""><label >Address</label><Input value={address}
-                    onChange={(event) => setAddress(event.target.value)}/></div>
-            <div className=""><label >Role</label><Input value={role}
-                    onChange={(event) => setRole(event.target.value)} /></div>
-      </Modal>
+        <CreateUserModal 
+                accessToken = {accessToken}
+                getData = {getData}
+                isCreateModalOpen={isCreateModalOpen}
+                setIsCreateModalOpen={setIsCreateModalOpen}
+        />
+        <UpdateUserModal 
+            accessToken = {accessToken}
+            getData = {getData}
+            isUpdateModalOpen={isUpdateModalOpen}
+            setIsUpdateModalOpen={setIsUpdateModalOpen}
+            record = {record}
+            setRecord = {setRecord}
+        />
     </div>
   )
 }

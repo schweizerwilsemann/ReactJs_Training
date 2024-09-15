@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Outlet, RouterProvider, Link } from 'react-router-dom'
 import App from './App.tsx'
@@ -40,6 +40,28 @@ const Header = () => {
     );
 };
 const LayoutAdmin = () => {
+  const getData = async () => {
+
+    const res = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+            "Content-Type" : "application/json"
+        },
+        body: JSON.stringify({
+          username : "hoidanit@gmail.com",
+          password: "123456"
+        })
+    });
+    const data = await res.json();
+    if(data.data) {
+      localStorage.setItem("accessToken", data.data.access_token)
+    }
+
+}
+  useEffect(() => {
+    getData();    
+  }, [])
+  
   return(
     <div className="">
       <Header/>
