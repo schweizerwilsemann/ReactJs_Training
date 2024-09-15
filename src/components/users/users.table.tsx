@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 // import '..//..//styles/users.css';
-import {Button, Table, Modal, Input} from 'antd';
+import {Button, Table, Modal, Input, notification} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type, {ColumnsType} from 'antd/es/table';
 interface IUsers {
@@ -20,19 +20,18 @@ export default function UsersTable() {
     const [role, setRole] = useState('');
     const [gender, setGender] = useState('');
     const [address, setAddress] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjZlMTNmNmQwY2VkZGMxYzc5ZjlmMzg0IiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJhZGRyZXNzIjoiVmlldE5hbSIsImlzVmVyaWZ5Ijp0cnVlLCJuYW1lIjoiSSdtIGFkbWluIiwidHlwZSI6IlNZU1RFTSIsInJvbGUiOiJBRE1JTiIsImdlbmRlciI6Ik1BTEUiLCJhZ2UiOjY5LCJpYXQiOjE3MjYyOTQ0MDUsImV4cCI6MTgxMjY5NDQwNX0.sHNc79YauulOx-fk6PD4GEVxCQie8zxBMGQWr6a6IM8";
 
 
     useEffect(() => {
-        console.log(">>> check use effect");    
         getData();
     }, []);
     
     const getData = async () => {
-        const accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjZlMTNmNmQwY2VkZGMxYzc5ZjlmMzg0IiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJhZGRyZXNzIjoiVmlldE5hbSIsImlzVmVyaWZ5Ijp0cnVlLCJuYW1lIjoiSSdtIGFkbWluIiwidHlwZSI6IlNZU1RFTSIsInJvbGUiOiJBRE1JTiIsImdlbmRlciI6Ik1BTEUiLCJhZ2UiOjY5LCJpYXQiOjE3MjYyOTQ0MDUsImV4cCI6MTgxMjY5NDQwNX0.sHNc79YauulOx-fk6PD4GEVxCQie8zxBMGQWr6a6IM8";
 
-
-        const res = await fetch('http://localhost:8000/api/v1/users/all', {
+        const res = await fetch('http://localhost:8000/api/v1/users', {
             method: 'GET',
             
             headers: {
@@ -40,8 +39,8 @@ export default function UsersTable() {
                 "Content-Type" : "application/json"
             }
         });
-        const data = await res.json();
-        setListUsers(data.data.result);
+        const d = await res.json();
+        setListUsers(d.data.result);
     }
 
     const columns : ColumnsType<IUsers> = [
@@ -65,31 +64,55 @@ export default function UsersTable() {
 
     ];
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const showModal = () => {
-        setIsModalOpen(true);
-    };
-
-    const handleOk = () => {
+    const handleOk =  async () => {
         const data = {
             name, email, password, age, gender, address, role
         }
-        console.log(">>>check ok data: ", data);
-        setIsModalOpen(false);
+        const res = await fetch('http://localhost:8000/api/v1/users', {
+            method: 'POST',
+            
+            headers: {
+                "authorization" : `Bearer ${accessToken}`,
+                "Content-Type" : "application/json"
+            },
+            body: JSON.stringify({...data})
+        });
+        const d = await res.json();
+        if(d.data){
+            //success
+            await getData();
+            notification.success({
+                message: "Created successfully!"
+            });
+            setIsModalOpen(false);
+        }
+        else{
+            //fail
+            notification.error({
+                message: "Something went wrong",
+                description: JSON.stringify(d.message)
+            })
+        }
+         
     };
 
-    const handleCancel = () => {
+    const handlCloseCreateModal = () => {
         setIsModalOpen(false);
-    };
-
-
+        setName("");
+        setRole("");
+        setEmail("");
+        setAddress("");
+        setAge("");
+        setGender("");
+        setPassword("");
+    }
     return (
     <div>
         <div style={{display: 'flex', justifyContent: 'space-between', }}>
             <h2>Table Users</h2>
             <div style={{}}>
-                <Button onClick={showModal} icon={<PlusOutlined />} type={`primary`}>Add New</Button>
+                <Button onClick={() =>  setIsModalOpen(true)} icon={<PlusOutlined />} type={`primary`}>Add New</Button>
             </div>
         </div>
         <Table columns={columns} dataSource={listUsers} rowKey={"_id"}/>
@@ -97,7 +120,7 @@ export default function UsersTable() {
       <Modal title="Add new users" 
         open={isModalOpen} 
         onOk={handleOk} 
-        onCancel={handleCancel}
+        onCancel={() => handlCloseCreateModal()}
         maskClosable={false}
         >
             <div className="">
