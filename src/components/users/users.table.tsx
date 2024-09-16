@@ -21,6 +21,14 @@ export default function UsersTable() {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
     const [record, setRecord] = useState({});
+    
+    const [meta, setMeta] = useState({
+        current: 1,
+        pageSize: 2,
+        pages: 0,
+        total: 0
+    });
+    
 
     const accessToken = localStorage.getItem("accessToken") as string;
 
@@ -31,7 +39,7 @@ export default function UsersTable() {
     
     const getData = async () => {
 
-        const res = await fetch('http://localhost:8000/api/v1/users/all', {
+        const res = await fetch(`http://localhost:8000/api/v1/users?current=${meta.current}&pageSize=${meta.pageSize}`, {
             method: 'GET',
             
             headers: {
@@ -48,6 +56,12 @@ export default function UsersTable() {
         }
 
         setListUsers(d.data.result);
+        setMeta({
+            current: d.data.meta.current,
+            pageSize: d.data.meta.pageSize,
+            pages: d.data.meta.pages,
+            total: d.data.meta.total
+        })
     }
 
     const confirm = async (user: IUsers) => {
@@ -128,7 +142,31 @@ export default function UsersTable() {
 
     ];
 
-    
+    const handleOnchange = async (page: number, pageSize: number) => {
+        const res = await fetch(`http://localhost:8000/api/v1/users?current=${page}&pageSize=${pageSize}`, {
+            method: 'GET',
+            
+            headers: {
+                "authorization" : `Bearer ${accessToken}`,
+                "Content-Type" : "application/json"
+            }
+        });
+        const d = await res.json();
+
+        if(!d.data) {
+            notification.error({
+                message: JSON.stringify(d.message)
+            })
+        }
+
+        setListUsers(d.data.result);
+        setMeta({
+            current: d.data.meta.current,
+            pageSize: d.data.meta.pageSize,
+            pages: d.data.meta.pages,
+            total: d.data.meta.total
+        })
+    }
     return (
     <div>
         <div style={{display: 'flex', justifyContent: 'space-between', }}>
@@ -136,8 +174,19 @@ export default function UsersTable() {
             <div style={{}}>
                 <Button onClick={() =>  setIsCreateModalOpen(true)} icon={<PlusOutlined />} type={`primary`}>Add New</Button>
             </div>
-        </div>
-        <Table columns={columns} dataSource={listUsers} rowKey={"_id"}/>
+        </div> 
+        <Table columns={columns} 
+                dataSource={listUsers} 
+                rowKey={"_id"} 
+                pagination={{
+                    current: meta.current,
+                    pageSize: meta.pageSize,
+                    total: meta.total,
+                    showTotal: (total, range) => `${range[0]} - ${range[1]} of ${total} items`,
+                    onChange: (page: number, pageSize: number) => handleOnchange(page, pageSize),
+                    showSizeChanger: true
+                }}        
+        />
         <CreateUserModal 
                 accessToken = {accessToken}
                 getData = {getData}
